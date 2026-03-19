@@ -3,10 +3,17 @@
   "version": "1.0.0",
   "description": "Generador de webs react mediante diseñador visual",
   "license": "ISC",
-  "author": "",
+  "author": "AngelCieep y Daniel Cubilete",
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
+    "start": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
   }
 }
