@@ -2,14 +2,11 @@ const http = require('http');
 const express = require('express');
 const app = express();
 const port = 3000;
+const builder = require('./builder');
 
 app.use(express.json());
 
-let init = 'Hello World!';
-
-app.get('/', (req, res) => {
-    return res.json(init);
-});
+builder(app);
 
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
