@@ -1,4 +1,4 @@
-let init = 'Hello Worlsd!';
+let init = 'Hello World!';
 
 module.exports = (app) => {
     app.get('/', (req, res) => {
