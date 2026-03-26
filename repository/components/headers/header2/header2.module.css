@@ -1,0 +1,19 @@
+.navbar {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.navLink {
+  color: #333;
+  font-weight: 500;
+}
+
+.navLink:hover {
+  color: #000;
+}

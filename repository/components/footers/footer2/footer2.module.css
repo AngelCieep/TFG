@@ -1,0 +1,29 @@
+.footer {
+  padding: 1.5rem 0;
+  border-top: 1px solid #dee2e6;
+}
+
+.inner {
+  gap: 1rem;
+}
+
+.copyright {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.links {
+  display: flex;
+  gap: 1rem;
+}
+
+.link {
+  color: #495057;
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.15s;
+}
+
+.link:hover {
+  color: #000;
+}
