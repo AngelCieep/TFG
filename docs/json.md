@@ -1,160 +1,183 @@
-# Documentación: Estructura JSON del Diseñador de Interfaces
+# Estructura JSON del diseñador
 
 ## 1. Introducción
 
-El sistema de generación de interfaces utiliza un archivo JSON como representación estructural del diseño creado mediante el editor visual.
-
-Este JSON actúa como **fuente de verdad (source of truth)** del diseño y será interpretado posteriormente por un backend desarrollado en Node.js para generar automáticamente un proyecto React funcional.
+El sistema de generación de interfaces utiliza un archivo JSON como fuente de verdad del diseño
+creado mediante el editor visual. Este JSON es interpretado por el pipeline de Node.js para
+generar automáticamente un proyecto React funcional con soporte de múltiples páginas.
 
 La estructura del JSON se divide en dos partes principales:
 
-* **Header** → Información del proyecto
-* **Body** → Jerarquía de componentes de la interfaz
+- **`installation`** → Información global del proyecto, plantilla, y shell compartido entre páginas.
+- **`pages`** → Array de páginas, cada una con su ruta, título y árbol de componentes.
 
 ---
 
-# 2. Estructura General
+## 2. Estructura general
 
 ```json
 {
-  "header": {},
-  "body": {}
+  "installation": { ... },
+  "pages": [ ... ]
 }
 ```
 
-### Header
-
-Contiene la información global del proyecto.
-
-### Body
-
-Contiene la estructura jerárquica de los componentes visuales de la página.
-
 ---
 
-# 3. Header
+## 3. installation
 
-El `header` contiene metadatos necesarios para generar el proyecto.
-
-## Ejemplo
+Contiene los metadatos del proyecto y el **shell**: el layout global que se renderiza en `App.tsx`
+y es compartido por todas las páginas.
 
 ```json
 {
-  "header": {
+  "installation": {
     "projectName": "mi-web",
-    "template": "react-basic",
+    "template": "template1",
     "version": "1.0",
-    "grid": 12
+    "grid": 12,
+    "shell": [
+      { "component": "Header1", "props": { "brand": "Mi Web", "links": [] } },
+      { "component": "Outlet" },
+      { "component": "Footer1", "props": { "copyright": "© 2026 Mi Web." } }
+    ]
   }
 }
 ```
 
-## Propiedades
+### Propiedades de installation
 
-| Propiedad   | Descripción                            |
-| ----------- | -------------------------------------- |
-| projectName | Nombre del proyecto generado           |
-| template    | Plantilla base de React a utilizar     |
-| version     | Versión del esquema JSON               |
-| grid        | Número de columnas del sistema de grid |
+| Propiedad   | Tipo     | Descripción                                                   |
+|-------------|----------|---------------------------------------------------------------|
+| projectName | string   | Nombre del proyecto generado. Nombre de la carpeta de salida. |
+| template    | string   | Nombre de la plantilla base en `repository/templates/`.       |
+| version     | string   | Versión del esquema JSON.                                     |
+| grid        | number   | Número de columnas de la cuadrícula. Por defecto 12.          |
+| shell       | array    | Lista de componentes del layout global. Ver sección 3.1.      |
+
+### 3.1 shell
+
+El `shell` es un array de nodos de componente que forman el layout global de la aplicación.
+Se renderizan en `App.tsx` envolviendo el contenido de todas las páginas.
+
+Cada nodo del shell tiene solo `component` y `props` — sin `id`, `layout` ni `children`.
+
+| Propiedad | Tipo   | Descripción                                      |
+|-----------|--------|--------------------------------------------------|
+| component | string | Nombre del componente. Puede ser un componente de biblioteca o `Outlet`. |
+| props     | object | Propiedades que se pasan al componente.          |
+
+**`Outlet`** es un nodo especial que marca el hueco donde React Router inyecta el contenido
+de la página activa. El shell debe contener exactamente un nodo `Outlet`.
 
 ---
 
-# 4. Body
+## 4. pages
 
-El `body` representa la estructura visual de la página.
+Array de páginas de la aplicación. Cada elemento representa una ruta navegable.
 
-Los componentes se organizan en forma de **árbol jerárquico**, permitiendo hasta **5 niveles de profundidad**.
+```json
+{
+  "pages": [
+    {
+      "id": "home",
+      "path": "/",
+      "title": "Inicio - Mi Web",
+      "body": { ... }
+    },
+    {
+      "id": "about",
+      "path": "/about",
+      "title": "Sobre nosotros",
+      "body": { ... }
+    }
+  ]
+}
+```
 
-Cada nodo del árbol representa un componente visual.
+### Propiedades de cada página
+
+| Propiedad | Tipo   | Descripción                                                      |
+|-----------|--------|------------------------------------------------------------------|
+| id        | string | Identificador único de la página. Usado como nombre del archivo `.tsx`. |
+| path      | string | Ruta de React Router. Ej: `/`, `/about`, `/contacto`.           |
+| title     | string | Texto que aparece en la pestaña del navegador (`<title>`).       |
+| body      | object | Árbol de componentes de esta página. Ver sección 5.              |
 
 ---
 
-# 5. Estructura de un nodo
+## 5. body: árbol de componentes
 
-Cada nodo del árbol sigue la siguiente estructura:
+El `body` de cada página es un árbol jerárquico de nodos. El nodo raíz siempre es `Root`.
+Los componentes se pueden anidar hasta **5 niveles de profundidad**.
+
+### Estructura de un nodo
 
 ```json
 {
   "id": "unique-id",
   "component": "NombreDelComponente",
-  "bootstrap": {},
+  "layout": {
+    "colStart": 1,
+    "colSpan": 12,
+    "rowStart": 1,
+    "rowSpan": 1
+  },
   "props": {},
   "children": []
 }
 ```
 
-## Propiedades
+### Propiedades de un nodo
 
-| Propiedad | Descripción                            |
-| --------- | -------------------------------------- |
-| id        | Identificador único del componente     |
-| component | Nombre del componente en la biblioteca |
-| bootstrap | Información de layout (grid)           |
-| props     | Propiedades del componente             |
-| children  | Subcomponentes anidados                |
+| Propiedad | Tipo   | Descripción                                                       |
+|-----------|--------|-------------------------------------------------------------------|
+| id        | string | Identificador único del nodo dentro de la página.                 |
+| component | string | Nombre del componente. Debe existir en `repository/components/` o ser estructural. |
+| layout    | object | Posición del componente en la cuadrícula. Ver sección 6.          |
+| props     | object | Propiedades que se pasan al componente React.                     |
+| children  | array  | Nodos hijos. Puede estar vacío (`[]`).                            |
 
 ---
 
-# 6. Sistema de Grid (Bootstrap Layout)
+## 6. layout: posicionamiento en cuadrícula
 
-El campo `bootstrap` define la posición del componente dentro de la cuadrícula.
-
-Ejemplo:
+El campo `layout` define la posición del nodo dentro de la cuadrícula CSS Grid de su contenedor.
+Usa cuatro valores: columna de inicio, ancho en columnas, fila de inicio, y alto en filas.
 
 ```json
 {
-  "bootstrap": {
+  "layout": {
     "colStart": 1,
-    "colSpan": 6
+    "colSpan": 6,
+    "rowStart": 2,
+    "rowSpan": 1
   }
 }
 ```
 
-## Propiedades
+| Propiedad | Tipo   | Descripción                                               |
+|-----------|--------|-----------------------------------------------------------|
+| colStart  | number | Columna en la que empieza el componente. Base 1.          |
+| colSpan   | number | Número de columnas que ocupa.                             |
+| rowStart  | number | Fila en la que empieza el componente. Base 1.             |
+| rowSpan   | number | Número de filas que ocupa.                                |
 
-| Propiedad | Descripción                 |
-| --------- | --------------------------- |
-| colStart  | Columna inicial             |
-| colSpan   | Número de columnas ocupadas |
+El número total de columnas disponibles está definido en `installation.grid` (por defecto 12).
+El número total de filas por contenedor lo calcula el diseñador automáticamente.
+Ver `grid.md` para los detalles del sistema de cuadrícula.
 
 ---
 
-# 7. Props del componente
+## 7. props
 
 Los `props` almacenan las propiedades que el componente recibirá en React.
-
-Ejemplo en React:
-
-```jsx
-<Button label="Comprar" color="primary" />
-```
-
-Representación en JSON:
 
 ```json
 {
   "props": {
     "label": "Comprar",
-    "color": "primary"
-  }
-}
-```
-
-Tipos de valores permitidos:
-
-* String
-* Number
-* Boolean
-* Object
-* Array
-
-Ejemplo:
-
-```json
-{
-  "props": {
-    "title": "Producto",
+    "color": "primary",
     "price": 19.99,
     "featured": true,
     "tags": ["nuevo", "oferta"]
@@ -162,113 +185,94 @@ Ejemplo:
 }
 ```
 
----
-
-# 8. Jerarquía de Componentes
-
-El sistema permite una jerarquía de hasta **5 niveles**.
-
-## Ejemplo de jerarquía
-
-```
-Page
- └ Section
-     └ Container
-         └ Card
-             └ Button
-```
-
-Esto permite crear layouts complejos manteniendo una estructura controlada.
+Tipos de valores permitidos: `string`, `number`, `boolean`, `object`, `array`.
 
 ---
 
-# 9. Ejemplo Completo
+## 8. Componentes estructurales
+
+Algunos nombres de componente son especiales. No tienen archivo en `repository/components/`
+y el pipeline los trata como contenedores estructurales, no como componentes de biblioteca.
+
+| Componente  | Uso                                                               |
+|-------------|-------------------------------------------------------------------|
+| `Root`      | Nodo raíz del `body` de cada página. Obligatorio como primer nodo. |
+| `Section`   | Sección semántica dentro de una página.                           |
+| `Container` | Contenedor de elementos dentro de una sección.                    |
+| `Outlet`    | Marcador del hueco de páginas en el shell. Solo válido en `shell[]`. |
+
+El pipeline los omite en la verificación de biblioteca y no copia ningún archivo para ellos.
+
+---
+
+## 9. Ejemplo completo
 
 ```json
 {
-  "header": {
-    "projectName": "mi-web",
-    "template": "react-basic",
+  "installation": {
+    "projectName": "mi-web-prueba",
+    "template": "template1",
     "version": "1.0",
-    "grid": 12
+    "grid": 12,
+    "shell": [
+      {
+        "component": "Header1",
+        "props": {
+          "brand": "Mi Web",
+          "links": [
+            { "label": "Inicio", "href": "/" },
+            { "label": "Sobre nosotros", "href": "/about" }
+          ]
+        }
+      },
+      { "component": "Outlet" },
+      {
+        "component": "Footer1",
+        "props": {
+          "copyright": "© 2026 Mi Web. Todos los derechos reservados.",
+          "links": [
+            { "label": "Privacidad", "href": "/privacy" }
+          ]
+        }
+      }
+    ]
   },
 
-  "body": {
-    "id": "page-root",
-    "component": "Page",
-    "bootstrap": {
-      "colStart": 1,
-      "colSpan": 12
-    },
-
-    "props": {},
-
-    "children": [
-      {
-        "id": "section-1",
-        "component": "Section",
-        "bootstrap": {
-          "colStart": 1,
-          "colSpan": 12
-        },
-
-        "props": {
-          "background": "light"
-        },
-
+  "pages": [
+    {
+      "id": "home",
+      "path": "/",
+      "title": "Inicio - Mi Web",
+      "body": {
+        "id": "page-root",
+        "component": "Root",
+        "layout": { "colStart": 1, "colSpan": 12, "rowStart": 1, "rowSpan": 3 },
+        "props": {},
         "children": [
           {
-            "id": "container-1",
-            "component": "Container",
-            "bootstrap": {
-              "colStart": 1,
-              "colSpan": 12
-            },
-
-            "props": {},
-
+            "id": "section-1",
+            "component": "Section",
+            "layout": { "colStart": 1, "colSpan": 12, "rowStart": 1, "rowSpan": 1 },
+            "props": { "background": "light" },
             "children": [
               {
-                "id": "card-1",
-                "component": "Card",
-                "bootstrap": {
-                  "colStart": 4,
-                  "colSpan": 4
-                },
-
-                "props": {
-                  "title": "Producto"
-                },
-
+                "id": "container-1",
+                "component": "Container",
+                "layout": { "colStart": 1, "colSpan": 12, "rowStart": 1, "rowSpan": 1 },
+                "props": {},
                 "children": [
                   {
                     "id": "text-1",
                     "component": "Text",
-                    "bootstrap": {
-                      "colStart": 1,
-                      "colSpan": 12
-                    },
-
-                    "props": {
-                      "text": "Descripción del producto"
-                    },
-
+                    "layout": { "colStart": 1, "colSpan": 8, "rowStart": 1, "rowSpan": 1 },
+                    "props": { "text": "Bienvenido a mi web generada automáticamente" },
                     "children": []
                   },
-
                   {
                     "id": "button-1",
                     "component": "Button",
-                    "bootstrap": {
-                      "colStart": 5,
-                      "colSpan": 2
-                    },
-
-                    "props": {
-                      "label": "Comprar",
-                      "color": "primary"
-                    },
-
+                    "layout": { "colStart": 9, "colSpan": 4, "rowStart": 1, "rowSpan": 1 },
+                    "props": { "label": "Saber más", "color": "primary" },
                     "children": []
                   }
                 ]
@@ -277,57 +281,28 @@ Esto permite crear layouts complejos manteniendo una estructura controlada.
           }
         ]
       }
-    ]
-  }
+    },
+    {
+      "id": "about",
+      "path": "/about",
+      "title": "Sobre nosotros - Mi Web",
+      "body": {
+        "id": "about-root",
+        "component": "Root",
+        "layout": { "colStart": 1, "colSpan": 12, "rowStart": 1, "rowSpan": 1 },
+        "props": {},
+        "children": [
+          {
+            "id": "about-text",
+            "component": "Text",
+            "layout": { "colStart": 1, "colSpan": 12, "rowStart": 1, "rowSpan": 1 },
+            "props": { "text": "Esta web fue generada con React Page Generator." },
+            "children": []
+          }
+        ]
+      }
+    }
+  ]
 }
 ```
 
----
-
-# 10. Interpretación del JSON
-
-El archivo JSON será procesado por el backend de Node.js siguiendo este flujo:
-
-```
-Leer JSON
-   ↓
-Analizar header
-   ↓
-Crear proyecto React base
-   ↓
-Recorrer árbol de componentes
-   ↓
-Generar JSX automáticamente
-   ↓
-Copiar componentes desde biblioteca
-   ↓
-Construir proyecto final
-```
-
----
-
-# 11. Ventajas de este sistema
-
-* Separación entre diseño y código
-* Generación automática de interfaces
-* Estructura escalable
-* Fácil interpretación por backend
-* Compatible con renderizado dinámico en React
-
----
-
-# 12. Uso en el proyecto
-
-El flujo completo del sistema será:
-
-```
-Editor visual
-     ↓
-Generación de JSON
-     ↓
-Backend Node interpreta JSON
-     ↓
-Generación automática del proyecto React
-```
-
-Este enfoque permite construir aplicaciones web de forma visual manteniendo una arquitectura basada en componentes.
