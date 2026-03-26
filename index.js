@@ -2,7 +2,7 @@ const http = require('http');
 const express = require('express');
 const app = express();
 const port = 3000;
-const builder = require('./builder');
+const builder = require('./builder/builder');
 
 app.use(express.json());
 
