@@ -19,7 +19,7 @@
  */
 
 // Nodos estructurales que no corresponden a ningun archivo en la biblioteca.
-const STRUCTURAL_COMPONENTS = new Set(['Root', 'Section', 'Container']);
+const STRUCTURAL_COMPONENTS = new Set(['Root', 'Section', 'Container', 'Outlet']);
 
 /**
  * Recorre el arbol de nodos recursivamente en profundidad.

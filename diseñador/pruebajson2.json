@@ -1,28 +1,12 @@
 {
-  "header": {
+  "installation": {
     "projectName": "mi-web-prueba",
     "template": "template1",
     "version": "1.0",
-    "grid": 12
-  },
-
-  "body": {
-    "id": "page-root",
-    "component": "Root",
-    "layout": {
-      "colStart": 1,
-      "colSpan": 12
-    },
-    "props": {},
-
-    "children": [
+    "grid": 12,
+    "shell": [
       {
-        "id": "header-1",
         "component": "Header1",
-        "layout": {
-          "colStart": 1,
-          "colSpan": 12
-        },
         "props": {
           "brand": "Mi Web",
           "links": [
@@ -30,79 +14,90 @@
             { "label": "Sobre nosotros", "href": "/about" },
             { "label": "Contacto", "href": "/contact" }
           ]
-        },
-        "children": []
+        }
       },
-
+      { "component": "Outlet" },
       {
-        "id": "section-1",
-        "component": "Section",
-        "layout": {
-          "colStart": 1,
-          "colSpan": 12
-        },
-        "props": {
-          "background": "light"
-        },
-
-        "children": [
-          {
-            "id": "container-1",
-            "component": "Container",
-            "layout": {
-              "colStart": 1,
-              "colSpan": 12
-            },
-            "props": {},
-
-            "children": [
-              {
-                "id": "text-1",
-                "component": "Text",
-                "layout": {
-                  "colStart": 1,
-                  "colSpan": 8
-                },
-                "props": {
-                  "text": "Bienvenido a mi web generada automáticamente"
-                },
-                "children": []
-              },
-
-              {
-                "id": "button-1",
-                "component": "Button",
-                "layout": {
-                  "colStart": 5,
-                  "colSpan": 2
-                },
-                "props": {
-                  "label": "Saber más",
-                  "color": "primary"
-                },
-                "children": []
-              }
-            ]
-          }
-        ]
-      },
-
-      {
-        "id": "footer-1",
         "component": "Footer1",
-        "layout": {
-          "colStart": 1,
-          "colSpan": 12
-        },
         "props": {
           "copyright": "© 2026 Mi Web. Todos los derechos reservados.",
           "links": [
             { "label": "Privacidad", "href": "/privacy" },
             { "label": "Términos", "href": "/terms" }
           ]
-        },
-        "children": []
+        }
       }
     ]
-  }
+  },
+
+  "pages": [
+    {
+      "id": "home",
+      "path": "/",
+      "title": "Inicio - Mi Web",
+      "body": {
+        "id": "page-root",
+        "component": "Root",
+        "layout": {
+          "colStart": 1,
+          "colSpan": 12,
+          "rowStart": 1,
+          "rowSpan": 1
+        },
+        "props": {},
+
+        "children": [
+          {
+            "id": "section-1",
+            "component": "Section",
+            "layout": {
+              "colStart": 1,
+              "colSpan": 12,
+              "rowStart": 1,
+              "rowSpan": 1
+            },
+            "props": {
+              "background": "light"
+            },
+
+            "children": [
+              {
+                "id": "container-1",
+                "component": "Container",
+                "layout": {
+                  "colStart": 1,
+                  "colSpan": 12,
+                  "rowStart": 1,
+                  "rowSpan": 1
+                },
+                "props": {},
+
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+
+    {
+      "id": "about",
+      "path": "/about",
+      "title": "Sobre nosotros - Mi Web",
+      "body": {
+        "id": "about-root",
+        "component": "Root",
+        "layout": {
+          "colStart": 1,
+          "colSpan": 12,
+          "rowStart": 1,
+          "rowSpan": 1
+        },
+        "props": {},
+
+        "children": []
+      }
+    }
+  ]
 }
+

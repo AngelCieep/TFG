@@ -2,7 +2,7 @@
  *
  *  verify.js - Verifica que el objeto normalizado es ejecutable.
  *
- *  Ejecuta tres comprobaciones sobre el objeto devuelto por parser.js:
+ *  Ejecuta cuatro comprobaciones sobre el objeto devuelto por parser.js:
  *
  *    1. checkTemplate    : Comprueba que la carpeta de la plantilla indicada existe
  *                          en repository/templates/. Es un error bloqueante.
@@ -14,12 +14,15 @@
  *                          Los componentes de STRUCTURAL_COMPONENTS se omiten porque
  *                          no tienen archivo en la biblioteca.
  *
- *    3. checkOverlaps    : Recorre el arbol recursivamente y compara los rangos de
- *                          columnas de los nodos hermanos. Si dos hermanos ocupan las
- *                          mismas columnas dentro de un nodo padre, genera un aviso.
- *                          No es bloqueante, se incluye como warning en la respuesta.
+ *    3. checkOutlet      : Comprueba que el shell contiene exactamente un nodo Outlet.
+ *                          Es un error bloqueante si hay cero o mas de uno.
  *
- *  verify: funcion principal. Ejecuta los tres checks y devuelve un objeto con:
+ *    4. checkOverlaps    : Recorre cada arbol de pagina recursivamente y compara los
+ *                          rectangulos de layout de los nodos hermanos. Dos nodos se
+ *                          solapan si sus rangos de columna Y de fila se intersectan
+ *                          simultaneamente. No es bloqueante, se incluye como warning.
+ *
+ *  verify: funcion principal. Ejecuta los cuatro checks y devuelve un objeto con:
  *    - ok       : true si no hay errores, false si los hay.
  *    - errors   : lista de errores bloqueantes.
  *    - warnings : lista de avisos no bloqueantes.
@@ -75,7 +78,23 @@ function checkComponents(components) {
     return errors;
 }
 
-// ─── Check 3: solapamiento de layout (warning, no bloqueante) ────────────────
+// ─── Check 3: el shell contiene exactamente un Outlet ────────────────────────
+
+function checkOutlet(shell) {
+    const count = shell.filter(n => n.component === 'Outlet').length;
+    if (count === 0) {
+        log('verify', `Comprobando Outlet en shell`, 'FALLO');
+        return `El shell no contiene ningún nodo Outlet. Añade un Outlet para que las páginas se rendericen.`;
+    }
+    if (count > 1) {
+        log('verify', `Comprobando Outlet en shell`, 'FALLO');
+        return `El shell contiene ${count} nodos Outlet. Solo puede haber uno.`;
+    }
+    log('verify', `Comprobando Outlet en shell`, 'OK');
+    return null;
+}
+
+// ─── Check 4: solapamiento de layout (warning, no bloqueante) ────────────────
 
 function checkOverlaps(tree, warnings) {
     walkTree(tree, node => {
@@ -88,15 +107,26 @@ function checkOverlaps(tree, warnings) {
                 const b = children[j];
                 if (!a.layout || !b.layout) continue;
 
-                const aStart = a.layout.colStart;
-                const aEnd   = a.layout.colStart + a.layout.colSpan;
-                const bStart = b.layout.colStart;
-                const bEnd   = b.layout.colStart + b.layout.colSpan;
+                const aColStart = a.layout.colStart;
+                const aColEnd   = a.layout.colStart + a.layout.colSpan;
+                const bColStart = b.layout.colStart;
+                const bColEnd   = b.layout.colStart + b.layout.colSpan;
 
-                if (aStart < bEnd && bStart < aEnd) {
+                const aRowStart = a.layout.rowStart;
+                const aRowEnd   = a.layout.rowStart + a.layout.rowSpan;
+                const bRowStart = b.layout.rowStart;
+                const bRowEnd   = b.layout.rowStart + b.layout.rowSpan;
+
+                // Sin rowStart/rowSpan no se puede determinar solapamiento real
+                if (aRowStart == null || bRowStart == null) continue;
+
+                const colsOverlap = aColStart < bColEnd && bColStart < aColEnd;
+                const rowsOverlap = aRowStart < bRowEnd && bRowStart < aRowEnd;
+
+                if (colsOverlap && rowsOverlap) {
                     warnings.push(
                         `Solapamiento de layout en '${node.id}': ` +
-                        `'${a.id}' (cols ${aStart}-${aEnd - 1}) y '${b.id}' (cols ${bStart}-${bEnd - 1}) se superponen.`
+                        `'${a.id}' y '${b.id}' ocupan el mismo espacio en la cuadrícula.`
                     );
                     log('verify', `Solapamiento detectado en '${node.id}'`, 'AVISO');
                 }
@@ -109,7 +139,7 @@ function checkOverlaps(tree, warnings) {
 
 /**
  * Verifica que el objeto normalizado es ejecutable:
- * plantilla existente, componentes existentes, sin solapamientos de layout.
+ * plantilla existente, componentes existentes, Outlet en shell, sin solapamientos.
  *
  * @param {object} parsed - Objeto devuelto por parseJson()
  * @returns {{ ok: boolean, errors: string[], warnings: string[], ...parsed }}
@@ -126,8 +156,14 @@ function verify(parsed) {
     const componentErrors = checkComponents(parsed.components);
     errors.push(...componentErrors);
 
-    // Check 3: solapamientos (solo warnings)
-    checkOverlaps(parsed.tree, warnings);
+    // Check 3: Outlet en el shell
+    const outletError = checkOutlet(parsed.shell);
+    if (outletError) errors.push(outletError);
+
+    // Check 4: solapamientos por página (solo warnings)
+    for (const page of parsed.pages) {
+        checkOverlaps(page.body, warnings);
+    }
 
     log('verify', `Verificacion completada: ${errors.length} errores, ${warnings.length} warnings.`);
 
